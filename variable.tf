@@ -5,5 +5,6 @@ variable "region" {
 variable "server_http_port" {
   description = "The port for the web server."
   type        = number
-  default     = 8080
+  default     = 80
+  
 }
