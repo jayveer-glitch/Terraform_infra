@@ -2,17 +2,20 @@
 resource "aws_security_group" "web_sg" {
   name        = "web-server-sg"
   description = "Allow HTTP traffic"
+  vpc_id     = aws_vpc.main.id
 
   # This is the rule you will test
   ingress {
+    description = "Allow HTTP traffic from anywhere"
     from_port   = var.server_http_port
     to_port     = var.server_http_port
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    # cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Allow all outbound traffic
   egress {
+  description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
