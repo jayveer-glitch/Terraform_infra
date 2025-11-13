@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   static-test :
-    name : static-ananylsis
+    name : static-analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -77,7 +77,7 @@ jobs:
         with:
           name: tfplan
 
-      - name: Apply temperory infrastructure
+      - name: Apply temporory infrastructure
         run: terraform apply -auto-approve tfplan
 
       - name: Run infrastructure test (using Terratest)
