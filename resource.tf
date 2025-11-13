@@ -30,7 +30,7 @@ resource "aws_instance" "example" {
   subnet_id = aws_subnet.main.id
   
   # We must tell the instance which firewall to use
-  vpc_security_group_ids = [aws_security_group.allow_web_ssh.id]
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
   # -----------------------
   user_data = <<-EOF
               #!/bin/bash
