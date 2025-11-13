@@ -25,7 +25,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: terraform init
-        run: terraform init -backend-config="demo-bucket-batak-420"
+        run: terraform init -backend-config="bucket=demo-bucket-batak-420"
 
       - name: terraform validate
         run: terraform validate
