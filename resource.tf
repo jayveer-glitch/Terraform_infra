@@ -10,7 +10,7 @@ resource "aws_security_group" "web_sg" {
     from_port   = var.server_http_port
     to_port     = var.server_http_port
     protocol    = "tcp"
-    # cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Allow all outbound traffic
