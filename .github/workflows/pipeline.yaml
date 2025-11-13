@@ -33,7 +33,7 @@ jobs:
       - name: run tfsec(Static security scan)
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
-          working-directory: .
+          working_directory: .
 
       - name: terraform plan
         run: terraform plan -out=tfplan
