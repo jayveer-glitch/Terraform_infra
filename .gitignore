@@ -2,3 +2,5 @@
 .terraform/
 *.tfstate
 *.tfstate.backup
+go.mod
+go.sum

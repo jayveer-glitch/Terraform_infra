@@ -1,0 +1,83 @@
+name : Terraform Pipeline
+on:
+  pull_request:
+ 
+permissions:
+   id-token: write
+   contents: read  
+   pull-requests: write
+
+jobs:
+  static-test :
+    name : static-ananylsis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::211125310849:role/Admin
+          aws-region: ap-south-1
+
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: terraform init
+        run: terraform init -backend-config="demo-bucket-batak-420"
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: run tfsec(Static security scan)
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working-directory: .
+
+      - name: terraform plan
+        run: terraform plan -out=tfplan
+  dynamic-test:
+    name: Apply, Test, Destroy
+    runs-on: ubuntu-latest
+    needs: static-test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::211125310849:role/Admin
+          aws-region: ap-south-1
+
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: terraform init
+        run: terraform init -backend-config="demo-bucket-batak-420"
+      - name: Create or select workspace
+        run: terraform workspace new pr-${{github.event.number}} || terraform workspace select pr-${{github.event.number}}
+      - name: Apply temperory infrastructure
+        run: terraform apply -auto-approve 
+
+      - name: Run infrastructure test (using Terratest)
+        run: |
+          cd test
+          go mod init terrarest-example
+          go mod tidy
+          go test -v -timeout 10m
+
+      - name: Destroy temperory infrastructure
+        if: always()
+        run: |
+          echo "Destroying Terraform infrastructure"
+          terraform destroy -auto-approve
+          echo "Deleting Terraform workspace"
+          terraform workspace select default
+          terraform workspace delete pr-${{github.event.number}}
