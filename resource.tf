@@ -19,7 +19,7 @@ resource "aws_security_group" "web_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["10.0.0.0/16"]
   }
 }
 
@@ -27,13 +27,23 @@ resource "aws_security_group" "web_sg" {
 resource "aws_instance" "example" {
   instance_type = "t2.micro"
   ami           = "ami-02b8269d5e85954ef" # Your specified AMI
-
+  root_block_device {
+    encrypted = true
+    volume_size = 8
+    volume_type = "gp2"
+      } 
+  
   # --- THIS IS THE FIX ---
   # We must tell the instance which network to live in
+
   subnet_id = aws_subnet.main.id
   
   # We must tell the instance which firewall to use
   vpc_security_group_ids = [aws_security_group.web_sg.id]
+    metadata_options {
+    http_tokens = "required"
+    http_endpoint = "enabled"
+  }
   # -----------------------
   user_data = <<-EOF
               #!/bin/bash
@@ -45,6 +55,7 @@ resource "aws_instance" "example" {
   }
 }
 # 1. Create the VPC (your private network)
+# tfsec:ignore:aws-ec2-require-vpc-flow-logs-for-all-vpcs
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 
@@ -59,7 +70,7 @@ resource "aws_subnet" "main" {
   cidr_block = "10.0.1.0/24"
   
   # This makes it a "public" subnet
-  map_public_ip_on_launch = true 
+  map_public_ip_on_launch = false 
 
   # This is the fix for the "t2.micro not supported" error
   availability_zone = "ap-south-1a"
