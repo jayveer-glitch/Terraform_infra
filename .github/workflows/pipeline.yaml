@@ -1,48 +1,57 @@
-name : Terraform Pipeline
+name: Terraform Pipeline
 on:
   pull_request:
  
 permissions:
-   id-token: write
-   contents: read  
-   pull-requests: write
+  id-token: write
+  contents: read  
+  pull-requests: write
 
 jobs:
-  static-test :
-    name : static-analysis
+  static-test:
+    name: static-analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: configure aws credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::211125310849:role/Admin
           aws-region: ap-south-1
 
-      - name: setup terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: terraform init
+      - name: Terraform init
         run: terraform init -backend-config="bucket=demo-bucket-batak-420"
 
-      - name: terraform validate
+      - name: Terraform validate
         run: terraform validate
 
-      - name: run tfsec(Static security scan)
+      - name: Run tfsec (Static security scan)
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
           working_directory: .
 
-      - name: terraform plan
+      - name: Create or select workspace
+        run: terraform workspace new pr-${{github.event.number}} || terraform workspace select pr-${{github.event.number}}
+
+      - name: Terraform plan
         run: terraform plan -out=tfplan
-      # Add this step to the end of your static-test job
+
       - name: Upload plan artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: tfplan
+
+      - name: Cleanup workspace on failure
+        if: failure()
+        run: |
+          terraform workspace select default
+          terraform workspace delete pr-${{github.event.number}} || true
         
   dynamic-test:
     name: Apply, Test, Destroy
@@ -52,33 +61,34 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: configure aws credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::211125310849:role/Admin
           aws-region: ap-south-1
 
-      - name: setup terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: setup go
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
 
-      - name: terraform init
+      - name: Terraform init
         run: terraform init -backend-config="bucket=demo-bucket-batak-420"
 
-      - name: Create or select workspace
-        run: terraform workspace new pr-${{github.event.number}} || terraform workspace select pr-${{github.event.number}}
-      # Add this step before your 'terraform apply' step
+      - name: Select workspace
+        run: terraform workspace select pr-${{github.event.number}}
+
       - name: Download plan artifact
         uses: actions/download-artifact@v4
         with:
           name: tfplan
 
-      - name: Apply temporory infrastructure
+      - name: Apply temporary infrastructure
         run: terraform apply -auto-approve tfplan
+        timeout-minutes: 30
 
       - name: Run infrastructure test (using Terratest)
         run: |
@@ -86,7 +96,7 @@ jobs:
           go mod tidy
           go test -v -timeout 10m
 
-      - name: Destroy temperory infrastructure
+      - name: Destroy temporary infrastructure
         if: always()
         run: |
           echo "Destroying Terraform infrastructure"
