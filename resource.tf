@@ -8,7 +8,7 @@ resource "aws_security_group" "web_sg" {
     from_port   = var.server_http_port
     to_port     = var.server_http_port
     protocol    = "tcp"
-    cidr_blocks = jsondecode(data.http.github_ips.response_body).actions
+    cidr_blocks = jsondecode(data.http.github.response_body).actions
   }
 
   egress {
@@ -16,7 +16,7 @@ resource "aws_security_group" "web_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
