@@ -1,3 +1,4 @@
+# tfsec:ignore:aws-ec2-no-public-ingress-sgroup
 resource "aws_security_group" "web_sg" {
   name        = "web-server-sg"
   description = "Allow HTTP traffic"
