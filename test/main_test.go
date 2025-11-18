@@ -12,7 +12,6 @@ import (
 
 func TestTerraformAwsExample(t *testing.T) {
 	t.Parallel()
-	
 
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../",
