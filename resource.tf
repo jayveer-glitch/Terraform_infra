@@ -1,4 +1,3 @@
-# tfsec:ignore:aws-ec2-no-public-ingress-sgr
 resource "aws_security_group" "web_sg" {
   name        = "web-server-sg"
   description = "Allow HTTP traffic"
@@ -9,7 +8,7 @@ resource "aws_security_group" "web_sg" {
     from_port   = var.server_http_port
     to_port     = var.server_http_port
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = jsondecode(data.http.github_ips.response_body).actions
   }
 
   egress {
@@ -43,6 +42,7 @@ resource "aws_instance" "example" {
 
   user_data = <<-EOF
               #!/bin/bash
+              yum update -y
               echo "Hello, World!" > index.html
               python3 -m http.server ${var.server_http_port} &
               EOF
@@ -95,6 +95,14 @@ resource "aws_route_table" "rt" {
 resource "aws_route_table_association" "a" {
   subnet_id      = aws_subnet.main.id
   route_table_id = aws_route_table.rt.id
+}
+
+data "http" "github" {
+  url="https://api.github.com/meta"
+  request_headers = {
+    Accept     = "application/vnd.github.v3+json"
+    "User-Agent" = "Terraform-HTTP-Module"
+  }
 }
 
 output "instance_public_ip" {
