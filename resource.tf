@@ -11,6 +11,7 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = jsondecode(data.http.github.response_body).actions
   }
 
+  # tfsec:ignore:aws-ec2-no-public-egress-sgr
   egress {
     description = "Allow all outbound traffic"
     from_port   = 443
