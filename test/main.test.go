@@ -13,16 +13,22 @@ import (
 func TestTerraformAwsExample(t *testing.T) {
 	t.Parallel()
 
-	const httpport = 80
-
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../",
 	}
 	defer terraform.Destroy(t, terraformOptions)
 	terraform.InitAndApply(t, terraformOptions)
 
+	serverPort := terraform.Output(t, terraformOptions, "server_port")
+	expectedPort := "80"
+
+	if serverPort != expectedPort {
+		t.Fatalf("Policy Violation: Server port is '%s', but must be '%s'", serverPort, expectedPort)
+	}
+
 	publicIP := terraform.Output(t, terraformOptions, "instance_public_ip")
-	url := fmt.Sprintf("http://%s:%d", publicIP, httpport)
+
+	url := fmt.Sprintf("http://%s:%s", publicIP, serverPort)
 
 	http_helper.HttpGetWithRetry(t, url, nil, 200, "Hello, World", 30, 10*time.Second)
 

@@ -100,3 +100,8 @@ output "instance_public_ip" {
   description = "Public IP address of the web server."
   value       = aws_instance.example.public_ip
 }
+
+output "server_port" {
+  description = "The port the server is running on."
+  value       = var.server_http_port
+}
