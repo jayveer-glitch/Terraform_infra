@@ -91,6 +91,8 @@ jobs:
         timeout-minutes: 30
 
       - name: Run infrastructure test (using Terratest)
+        env:
+          TF_WORKSPACE: pr-${{github.event.number}}
         run: |
           cd test
           go mod tidy
