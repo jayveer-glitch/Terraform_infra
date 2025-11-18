@@ -1,3 +1,16 @@
+locals {
+  github_all_ips = jsondecode(data.http.github.response_body).actions
+
+  github_ipv4_cidrs = [
+    for cidr in local.github_all_ips :
+    cidr if !strcontains(cidr, ":")
+  ]
+
+  github_ipv6_cidrs = [
+    for cidr in local.github_all_ips :
+    cidr if strcontains(cidr, ":")
+  ]
+}
 resource "aws_security_group" "web_sg" {
   name        = "web-server-sg"
   description = "Allow HTTP traffic"
@@ -8,7 +21,8 @@ resource "aws_security_group" "web_sg" {
     from_port   = var.server_http_port
     to_port     = var.server_http_port
     protocol    = "tcp"
-    cidr_blocks = jsondecode(data.http.github.response_body).actions
+    cidr_blocks      = local.github_ipv4_cidrs
+    ipv6_cidr_blocks = local.github_ipv6_cidrs
   }
 
   # tfsec:ignore:aws-ec2-no-public-egress-sgr
