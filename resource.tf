@@ -103,13 +103,6 @@ resource "aws_route_table_association" "a" {
   route_table_id = aws_route_table.rt.id
 }
 
-data "http" "github" {
-  url="https://api.github.com/meta"
-  request_headers = {
-    Accept     = "application/vnd.github.v3+json"
-    "User-Agent" = "Terraform-HTTP-Module"
-  }
-}
 
 output "instance_public_ip" {
   description = "Public IP address of the web server."
