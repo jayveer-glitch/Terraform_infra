@@ -44,7 +44,7 @@ resource "aws_instance" "example" {
   user_data = <<-EOF
               #!/bin/bash
               echo "Hello, World!" > index.html
-              nohup httpd -f -p ${var.server_http_port} &
+              python3 -m http.server ${var.server_http_port} &
               EOF
   tags = {
     Name = "ExampleInstance"
