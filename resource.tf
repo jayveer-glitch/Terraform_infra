@@ -1,16 +1,8 @@
-locals {
-  github_all_ips = jsondecode(data.http.github.response_body).actions
-
-  github_ipv4_cidrs = [
-    for cidr in local.github_all_ips :
-    cidr if !strcontains(cidr, ":")
-  ]
-
-  github_ipv6_cidrs = [
-    for cidr in local.github_all_ips :
-    cidr if strcontains(cidr, ":")
-  ]
+variable "my_ip" {
+  description = "The IP address of the CI runner"
+  type        = string
 }
+
 resource "aws_security_group" "web_sg" {
   name        = "web-server-sg"
   description = "Allow HTTP traffic"
@@ -21,17 +13,16 @@ resource "aws_security_group" "web_sg" {
     from_port   = var.server_http_port
     to_port     = var.server_http_port
     protocol    = "tcp"
-    cidr_blocks      = local.github_ipv4_cidrs
-    ipv6_cidr_blocks = local.github_ipv6_cidrs
+    cidr_blocks      = [var.my_ip]
   }
 
   # tfsec:ignore:aws-ec2-no-public-egress-sgr
-  egress {
-    description = "Allow all outbound traffic"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+ egress {
+    description = "Allow all outbound traffic within the VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
 }
 

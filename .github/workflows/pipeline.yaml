@@ -38,15 +38,6 @@ jobs:
       - name: Create or select workspace
         run: terraform workspace new pr-${{github.event.number}} || terraform workspace select pr-${{github.event.number}}
 
-      - name: Terraform plan
-        run: terraform plan -out=tfplan
-
-      - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: tfplan
-
       - name: Cleanup workspace on failure
         if: failure()
         run: |
@@ -81,13 +72,12 @@ jobs:
       - name: Select workspace
         run: terraform workspace select pr-${{github.event.number}}
 
-      - name: Download plan artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
+      - name: Get Runner IP
+        id: get_ip
+        run: echo "RUNNER_IP=$(curl -s ifconfig.me)" >> $GITHUB_ENV
 
       - name: Apply temporary infrastructure
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve -var="my_ip=${{ env.RUNNER_IP }}/32"
         timeout-minutes: 30
 
       - name: Run infrastructure test (using Terratest)
@@ -102,7 +92,7 @@ jobs:
         if: always()
         run: |
           echo "Destroying Terraform infrastructure"
-          terraform destroy -auto-approve
+          terraform destroy -auto-approve -var="my_ip=${{ env.RUNNER_IP }}/32"
           echo "Deleting Terraform workspace"
           terraform workspace select default
           terraform workspace delete pr-${{github.event.number}}
